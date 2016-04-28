@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chart</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.js"></script>
+</head>
+<body>
+<div style="width: 100%; height: 300px;" id="chart"></div>
+<script type="text/javascript">
+    var series = [{
+        'label': 'idle processes',
+        'data': []
+    },{
+        'label': 'active processes',
+        'data': []
+    }];
+    function prepare(data) {
+        for (var i = 0; i < 90; i++) {
+            series[0].data.push([i, 0]);
+            series[1].data.push([i, data['total processes']]);
+        }
+        run();
+    }
+    function run() {
+
+        var plot = $.plot('#chart', series, {lines: {show: true}});
+        setInterval(function() {
+            $.get('/status?json', function(data) {
+                var idle = [];
+                var active = [];
+                var ds1 = series[0].data.slice(1);
+                var ds2 = series[1].data.slice(1);
+                for (var i in ds1) {
+                    var d1 = ds1[i];
+                    var d2 = ds2[i];
+                    idle.push([d1[0] - 1, d1[1]]);
+                    active.push([d2[0] - 1, d2[1]]);
+                }
+
+                idle.push([89, data['idle processes']]);
+                active.push([89, data['active processes']]);
+
+                series[0].data = idle;
+                series[1].data = active;
+                plot.setData(series);
+                plot.draw();
+
+            });
+        }, 1000);
+    }
+
+    $.get('/status?json', prepare);
+</script>
+
+</body>
+</html>
